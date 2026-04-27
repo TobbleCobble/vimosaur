@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIMOSAUR | Prehistoric Productivity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+        
+        :root {
+            --peach: #FFDBC2;
+            --lava: #ff4d00;
+            --off-black: #0d0d0d;
+        }
+
+        body { 
+            font-family: 'Fira+Code', monospace; 
+            background-color: var(--off-black); 
+            color: var(--peach);
+        }
+
+        /* Syntax Highlighting */
+        .token-keyword { color: #ff79c6; }
+        .token-string { color: #f1fa8c; }
+        .token-function { color: #8be9fd; }
+        .token-comment { color: #6272a4; }
+
+        /* Cursor */
+        .cursor { background-color: var(--peach); color: var(--off-black); }
+
+        /* Lava Pulse Border */
+        .target-box {
+            outline: 2px solid var(--lava);
+            outline-offset: 1px;
+            animation: lava-pulse 1.2s infinite;
+        }
+
+        @keyframes lava-pulse {
+            0% { outline-color: rgba(255, 77, 0, 0.4); box-shadow: 0 0 0 rgba(255, 77, 0, 0); }
+            50% { outline-color: rgba(255, 77, 0, 1); box-shadow: 0 0 15px rgba(255, 77, 0, 0.6); }
+            100% { outline-color: rgba(255, 77, 0, 0.4); box-shadow: 0 0 0 rgba(255, 77, 0, 0); }
+        }
+
+        /* Modal Blur */
+        .modal-active { filter: blur(4px); pointer-events: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden">
+
+    <div class="w-full max-w-3xl relative">
+        
+        <header class="mb-6 flex justify-between items-end border-b border-[#FFDBC2]/10 pb-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tighter italic text-[#FFDBC2]">VIMOSAUR</h1>
+                <p id="status-bar" class="text-[10px] uppercase tracking-[0.3em] opacity-60 mt-1">Status: Hunting Targets...</p>
+            </div>
+            <div id="unlocked-keys" class="flex gap-2 mb-1"></div>
+        </header>
+
+        <div class="flex gap-8 mb-4 px-1 text-[10px] uppercase tracking-widest opacity-50">
+            <div>Avg Goal: <span id="stat-avg" class="text-[#FFDBC2] font-bold">0.00s</span></div>
+            <div>Moves: <span id="stat-total" class="text-[#FFDBC2] font-bold">0</span></div>
+            <div>Progress: <span id="stat-progress" class="text-[#FFDBC2] font-bold">0/10</span></div>
+        </div>
+
+        <div class="relative">
+            <div id="editor-container" class="bg-[#121212] border border-[#FFDBC2]/20 rounded-sm p-10 shadow-2xl transition-all duration-500">
+                <div id="editor" class="whitespace-pre text-lg leading-relaxed min-h-[200px]"></div>
+                
+                <div class="mt-10 flex justify-between text-[10px] font-black bg-[#FFDBC2] text-[#0d0d0d] px-3 py-1.5 uppercase tracking-tighter">
+                    <span id="mode-text">-- NORMAL --</span>
+                    <span id="pos-text">1,1</span>
+                </div>
+            </div>
+
+            <div id="level-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-8">
+                <div class="bg-[#1a1a1a] border-2 border-[#FFDBC2] p-8 w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,0.8)] text-center">
+                    <h2 class="text-2xl font-bold italic mb-2 tracking-tighter">LEVEL COMPLETE</h2>
+                    <p class="text-sm opacity-60 mb-8">You've mastered these motions. What's next, Vimosaur?</p>
+                    
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="window.gameAction('next')" class="bg-[#FFDBC2] text-black font-bold py-2 hover:bg-white transition-colors uppercase text-xs tracking-widest">Next Level</button>
+                        <button onclick="window.gameAction('infinite')" class="border border-[#FFDBC2] py-2 hover:bg-[#FFDBC2]/10 transition-colors uppercase text-xs tracking-widest">Infinite Mode</button>
+                        <button onclick="window.gameAction('restart')" class="text-[#FFDBC2]/40 py-2 hover:text-[#FFDBC2] transition-colors uppercase text-xs tracking-widest">Restart</button>
+                    </div>
+                </div>
+            </div>
+            <div id="infinite-controls" class="hidden mt-4 flex justify-end">
+                <button onclick="window.gameAction('next')" 
+                        class="text-[10px] border border-[#FFDBC2]/40 px-3 py-1 hover:bg-[#FFDBC2] hover:text-black transition-all uppercase tracking-widest font-bold">
+                    Skip to Level 2
+                </button>
+            </div>
+        </div>
+
+        <div id="instruction-box" class="mt-6 p-4 border-l border-[#FFDBC2]/20 text-xs italic opacity-40">
+            Navigation: use h, j, k, l to reach the lava-pulsing target.
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script>
+        // Global hook for modal buttons since app.js is a module
+        window.gameAction = (type) => {
+            const event = new CustomEvent('vimosaur-action', { detail: type });
+            window.dispatchEvent(event);
+        };
+    </script>
+</body>
+</html>
