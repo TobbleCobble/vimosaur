@@ -156,9 +156,61 @@ export class VimosaurMotion {
             }
             case 'f':
             case 't':
-                this.pendingAction = key; // Store f or t and wait for the next key
+                this.searchingAction = key; // Store f or t and wait for the next key
+                break;
+            case '{': { // Up to previous empty line
+                let found = false;
+                for (let i = this.cursor.y - 1; i >= 0; i--) {
+                    if (this.lines[i].trim() === "") {
+                        this.cursor.y = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) this.cursor.y = 0;
+                this.cursor.x = 0;
+                break;
+            }
+            case '}': { // Down to next empty line
+                let found = false;
+                for (let i = this.cursor.y + 1; i < this.lines.length; i++) {
+                    if (this.lines[i].trim() === "") {
+                        this.cursor.y = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) this.cursor.y = this.lines.length - 1;
+                this.cursor.x = 0;
+                break;
+            }
+            // --- Level 3: Edge Cases ---
+            case '0': // Absolute start of line
+                this.cursor.x = 0;
                 break;
 
+            case '$': // Absolute end of line
+                this.cursor.x = Math.max(0, line.length - 1);
+                break;
+
+            case '^': // First non-blank character
+                const firstChar = line.search(/\S/);
+                this.cursor.x = firstChar !== -1 ? firstChar : 0;
+                break;
+            case 'G': // Jump to bottom of file
+                this.cursor.y = this.lines.length - 1;
+                this.cursor.x = 0;
+                break;
+
+            case 'g': // Handle 'gg'
+                if (this.pendingAction === 'g') {
+                    this.cursor.y = 0;
+                    this.cursor.x = 0;
+                    this.pendingAction = null;
+                } else {
+                    this.pendingAction = 'g';
+                }
+                break;
 
         }
 
@@ -193,6 +245,12 @@ export class VimosaurMotion {
     snapToLine() {
         const lineLen = this.lines[this.cursor.y].length;
         this.cursor.x = Math.min(this.preferredX, Math.max(0, lineLen - 1));
+    }
+
+    jumpToPercentage(percent) {
+        const targetY = Math.floor((percent / 100) * (this.lines.length - 1));
+        this.cursor.y = Math.max(0, Math.min(targetY, this.lines.length - 1));
+        this.cursor.x = 0;
     }
 
     getPos() {

@@ -1,14 +1,6 @@
 import { VimosaurMotion } from './vimosaur-motion.js';
+import { config } from './config.js';
 
-const config = {
-    challengesPerLevel: 10,
-    levels: [
-        "", // Level 0 (unused)
-        `// Level 1: The Hunt\nfunction rawr() {\n  const dino = "Vimosaur";\n  console.log(dino + " is learning!");\n  return true;\n}`,
-        `// Level 2: The Migration\nfunction evolveDino(species, DNA) {\n  let mutation = DNA.split("").reverse().join("");\n  if (species === "Vimosaur") {\n    return \`Species: \${species} | DNA: \${mutation}\`;\n  }\n  console.warn("Unknown prehistoric entity detected!");\n  return null;\n}`,
-        `// Level 3: The Apex\nclass Vimosaur extends Predator {\n  constructor(name) {\n    super(name);\n    this.stamina = 100;\n  }\n  hunt(target) {\n    return this.stamina > 0 ? "Success" : "Exhausted";\n  }\n}`
-    ]
-};
 
 // Internal Stats Logic to prevent "undefined" errors
 const internalStats = {
@@ -29,10 +21,11 @@ let gameState = {
     challengesCompleted: 0,
     activeTarget: { x: 10, y: 1 },
     isInfinite: false,
-    validKeys: ['h', 'j', 'k', 'l']
+    validKeys: ['h', 'j', 'k', 'l'],
+    countBuffer: ""
 };
 
-const motion = new VimosaurMotion(config.levels[gameState.level]);
+const motion = new VimosaurMotion(config.levels[1].code);
 
 const levelMetadata = {
     1: { title: "The Grit", desc: "Basic hjkl movement. Muscle memory starts here." },
@@ -43,27 +36,38 @@ const levelMetadata = {
 
 function updateNavbar() {
     const nav = document.getElementById('nav-level-list');
-    nav.innerHTML = config.levels.map((_, i) => {
-        if (i === 0) return '';
-        const isActive = gameState.level === i;
-        const meta = levelMetadata[i] || { title: `Level ${i}`, desc: "More motions..." };
-        
-        return `
-            <button onclick="window.jumpToLevel(${i})" 
-                class="text-left p-3 border transition-all duration-200 group ${
-                    isActive 
-                    ? 'border-[#FFDBC2] bg-[#FFDBC2]/5' 
-                    : 'border-transparent hover:border-[#FFDBC2]/30'
-                }">
-                <div class="text-[10px] uppercase font-black mb-1 ${isActive ? 'text-[#FFDBC2]' : 'opacity-40'}">
-                    Level ${i}: ${meta.title}
-                </div>
-                <div class="text-[9px] leading-relaxed opacity-60 group-hover:opacity-100">
-                    ${meta.desc}
-                </div>
-            </button>
-        `;
-    }).join('');
+    
+    nav.innerHTML = config.categories.map(cat => `
+        <div class="mb-6">
+            <h3 class="text-[9px] uppercase tracking-[0.3em] opacity-30 mb-3 ml-2">
+                ${cat.name}
+            </h3>
+            <div class="flex flex-col gap-1">
+                ${cat.levelIds.map(id => {
+                    const level = config.levels[id];
+
+                    if (!level) {
+                        console.warn(`Level ${id} is listed in categories but missing from levels config.`);
+                        return ''; 
+                    }
+                    const isActive = gameState.level === id;
+                    return `
+                        <button onclick="window.jumpToLevel(${id})" 
+                            class="text-left p-3 border transition-all ${
+                                isActive 
+                                ? 'border-[#FFDBC2] bg-[#FFDBC2]/5' 
+                                : 'border-transparent hover:bg-white/5'
+                            }">
+                            <div class="text-[10px] font-bold ${isActive ? 'text-[#FFDBC2]' : 'opacity-50'}">
+                                ${id}. ${level.title}
+                            </div>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `).join('');
+
 }
 
 function getCharClass(line, char, x) {
@@ -82,7 +86,7 @@ function getCharClass(line, char, x) {
 function levelUp() {
     gameState.level++;
     gameState.challengesCompleted = 0;
-    const nextCode = config.levels[gameState.level] || config.levels[1];
+    const nextCode = config.levels[gameState.level].code || config.levels[1].code;
     motion.updateContent(nextCode);
     
     if (gameState.level === 2) {
@@ -95,6 +99,11 @@ function levelUp() {
         document.getElementById('instruction-box').innerText = 
             "Level 3: Search with 'f' (find) or 't' (until). Press 'f' then any character to jump to it!";
     }
+    if (gameState.level === 4) {
+        gameState.validKeys = ['h', 'j', 'k', 'l', 'w', 'e', 'b', 'f', 't', '{', '}'];
+        document.getElementById('instruction-box').innerText = 
+            "Level 3: Search with 'f' (find) or 't' (until). Press 'f' then any character to jump to it!";
+    }
     
     generateNewTarget();
     render();
@@ -104,7 +113,7 @@ function render() {
     const editor = document.getElementById('editor');
     if (!editor) return;
 
-    const currentCode = config.levels[gameState.level] || config.levels[1];
+    const currentCode = config.levels[gameState.level].code || config.levels[1].code;
     const lines = currentCode.split('\n');
     const currentPos = motion.getPos();
     let html = '';
@@ -163,7 +172,7 @@ function render() {
 
 // Target Logic
 async function generateNewTarget() {
-    const currentCode = config.levels[gameState.level] || config.levels[1];
+    const currentCode = config.levels[gameState.level].code || config.levels[1].code;
     const lines = currentCode.split('\n');
     const currentPos = motion.getPos();
 
@@ -211,10 +220,10 @@ window.addEventListener('keydown', (e) => {
     }
 
     // 2. Handle Search State (f/t)
-    if (motion.pendingAction) {
+    if (motion.searchingAction) {
         // Ignore "dead" keys like Shift/Control/Alt themselves
         if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') return;
-        if (e.key === 'Escape') { motion.pendingAction = null; render(); }
+        if (e.key === 'Escape') { motion.searchingAction = null; render(); }
         // Use e.key (this will be "(" if you press Shift+9)
         motion.findChar(e.key);
         
@@ -225,6 +234,29 @@ window.addEventListener('keydown', (e) => {
         return; 
     }
 
+    // if (/[0-9]/.test(e.key)) {
+    //     // Vim '0' is a motion, but 1-9 starts a count
+    //     if (e.key === '0' && gameState.countBuffer === "") {
+    //         // Treat as '0' motion (start of line)
+    //         motion.move('0');
+    //     } else {
+    //         gameState.countBuffer += e.key;
+    //         updateStatusBar(`Count: ${countBuffer}`);
+    //         return; 
+    //     }
+    // }
+
+    // // 2. Handle Percentage Jump
+    // if (e.key === '%') {
+    //     if (countBuffer !== "") {
+    //         const percent = parseInt(countBuffer);
+    //         motion.jumpToPercentage(percent);
+    //         gameState.countBuffer = ""; // Reset
+    //         render();
+    //         return;
+    //     }
+    // }
+
     if (!gameState.validKeys.includes(e.key)) return;
     internalStats.recordMove();
 
@@ -232,7 +264,7 @@ window.addEventListener('keydown', (e) => {
     
     updateModeDisplay();
 
-    if (!motion.pendingAction) {
+    if (!motion.searchingAction) {
         checkTargetReached();
     }
     
@@ -241,8 +273,8 @@ window.addEventListener('keydown', (e) => {
 
 function updateModeDisplay() {
     const modeEl = document.getElementById('mode-text');
-    if (motion.pendingAction) {
-        modeEl.innerText = `-- SEARCH (${motion.pendingAction.toUpperCase()}) --`;
+    if (motion.searchingAction) {
+        modeEl.innerText = `-- SEARCH (${motion.searchingAction.toUpperCase()}) --`;
         modeEl.style.color = "#ff4d00"; // Lava color to show active state
     } else {
         modeEl.innerText = "-- NORMAL --";
@@ -265,27 +297,6 @@ function handleTargetReached() {
     } else {
         generateNewTarget();
     }
-}
-
-function jumpToLevel(levelNum) {
-    if (levelNum >= config.levels.length) return;
-    
-    gameState.level = levelNum;
-    gameState.challengesCompleted = 0;
-    gameState.isInfinite = false;
-
-    // Logic to set keys based on level
-    if (levelNum === 1) unlockedKeys = ['h', 'j', 'k', 'l'];
-    if (levelNum === 2) unlockedKeys = ['h', 'j', 'k', 'l', 'w', 'e', 'b'];
-    if (levelNum === 3) unlockedKeys = ['h', 'j', 'k', 'l', 'w', 'e', 'b', 'f', 't'];
-
-    motion.updateContent(config.levels[levelNum]);
-    motion.cursor = { x: 0, y: 0 };
-    motion.preferredX = 0;
-    
-    generateNewTarget();
-    updateNavbar();
-    render();
 }
 
 window.addEventListener('vimosaur-action', (e) => {
@@ -316,20 +327,20 @@ window.addEventListener('vimosaur-action', (e) => {
 });
 
 window.jumpToLevel = (levelNum) => {
-    if (levelNum >= config.levels.length) return;
+    const levelData = config.levels[levelNum];
+    if (!levelData) return;
     
     gameState.level = levelNum;
     gameState.challengesCompleted = 0;
     gameState.isInfinite = false;
 
-    // Logic to set keys based on level
-    if (levelNum === 1) gameState.validKeys = ['h', 'j', 'k', 'l'];
-    if (levelNum === 2) gameState.validKeys = ['h', 'j', 'k', 'l', 'w', 'e', 'b'];
-    if (levelNum === 3) gameState.validKeys = ['h', 'j', 'k', 'l', 'w', 'e', 'b', 'f', 't'];
-
-    motion.updateContent(config.levels[levelNum]);
+    gameState.validKeys = levelData.keys;
+    
+    motion.updateContent(config.levels[levelNum].code);
     motion.cursor = { x: 0, y: 0 };
     motion.preferredX = 0;
+
+    document.getElementById('instruction-box').innerText = `${levelData.title}: ${levelData.desc}`;
     
     generateNewTarget();
     updateNavbar();
