@@ -158,6 +158,10 @@ export class VimosaurMotion {
             case 't':
                 this.searchingAction = key; // Store f or t and wait for the next key
                 break;
+            case 'F':
+            case 'T':
+                this.searchingAction = key; 
+                break;
             case '{': { // Up to previous empty line
                 let found = false;
                 for (let i = this.cursor.y - 1; i >= 0; i--) {
@@ -225,19 +229,29 @@ export class VimosaurMotion {
     
     findChar(targetChar) {
         const line = this.lines[this.cursor.y];
-        // Start searching from 1 char past the cursor
-        const forwardText = line.slice(this.cursor.x + 1);
-        const index = forwardText.indexOf(targetChar);
+        let newX = -1;
 
-        if (index !== -1) {
-            if (this.pendingAction === 'f') {
-                this.cursor.x += (index + 1);
-            } else if (this.pendingAction === 't') {
-                this.cursor.x += index;
+        if (this.searchingAction === 'f' || this.searchingAction === 't') {
+            // Forward Search (Existing logic)
+            const forwardText = line.slice(this.cursor.x + 1);
+            const index = forwardText.indexOf(targetChar);
+            if (index !== -1) {
+                newX = this.cursor.x + 1 + (this.searchingAction === 'f' ? index : index - 1);
+            }
+        } else if (this.searchingAction === 'F' || this.searchingAction === 'T') {
+            // Backward Search (New logic)
+            const backwardText = line.slice(0, this.cursor.x);
+            const index = backwardText.lastIndexOf(targetChar); // Find the last occurrence before cursor
+            if (index !== -1) {
+                newX = this.searchingAction === 'F' ? index : index + 1;
             }
         }
 
-        this.pendingAction = null; // CLEAR IMMEDIATELY
+        if (newX !== -1) {
+            this.cursor.x = Math.max(0, newX);
+        }
+
+        this.searchingAction = null;
         this.preferredX = this.cursor.x;
         return { ...this.cursor };
     }

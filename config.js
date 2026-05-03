@@ -38,6 +38,12 @@ export const config = {
             desc: "Master the file. gg (top), G (bottom), and { } for paragraphs.",
             keys: ['h', 'j', 'k', 'l', 'w', 'e', 'b', '0', '$', '^', '{', '}', 'g', 'G'],
             code: `// Top of File\nfunction first() { return 1; }\n\n\n\nfunction middle() { return 2; }\n\n\n\nfunction last() { return 3; }\n// End of File`
+        },
+        5: {
+            title: "Horizontal Snipe",
+            desc: "The Sniper. Use 'f' (find) or 't' (until) followed by a character to jump.",
+            keys: ['h', 'j', 'k', 'l', 'w', 'e', 'b', '0', '$', '^', '{', '}', 'g', 'G', 'f', 't','F', 'T'],
+            code: `// Level 5\nfunction snipe(target, range) {\n  const result = (target === "Prey") ? "Success" : "Miss";\n  console.log(\`[\${range}m] Result: \${result};\`);\n}`
         }
         // Levels 5-24 follow the same pattern...
     }

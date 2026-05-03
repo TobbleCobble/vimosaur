@@ -210,7 +210,6 @@ window.addEventListener('keydown', (e) => {
     const modal = document.getElementById('level-modal');
     const isModalOpen = !modal.classList.contains('hidden');
 
-    // --- 1. Modal Keyboard Controls ---
     if (isModalOpen) {
         const key = e.key.toLowerCase();
         if (key === 'n') window.gameAction('next');
@@ -219,15 +218,11 @@ window.addEventListener('keydown', (e) => {
         return; // Block movement keys while modal is open
     }
 
-    // 2. Handle Search State (f/t)
     if (motion.searchingAction) {
-        // Ignore "dead" keys like Shift/Control/Alt themselves
         if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') return;
         if (e.key === 'Escape') { motion.searchingAction = null; render(); }
-        // Use e.key (this will be "(" if you press Shift+9)
         motion.findChar(e.key);
         
-        // RE-RENDER IMMEDIATELY to clear the "-- SEARCH --" text
         updateModeDisplay(); 
         checkTargetReached();
         render();
@@ -246,7 +241,6 @@ window.addEventListener('keydown', (e) => {
     //     }
     // }
 
-    // // 2. Handle Percentage Jump
     // if (e.key === '%') {
     //     if (countBuffer !== "") {
     //         const percent = parseInt(countBuffer);
