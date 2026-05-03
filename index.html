@@ -47,24 +47,24 @@
     </style>
 </head>
 <body class="min-h-screen flex bg-[#0d0d0d] text-[#FFDBC2] font-['Fira_Code'] overflow-x-hidden">
-    <nav class="w-64 border-r border-[#FFDBC2]/10 p-6 flex flex-col gap-6 shrink-0 h-screen top-0 bg-[#0d0d0d] z-20">
-        <div>
-            <h1 class="text-xl font-black italic tracking-tighter mb-1">VIMOSAUR</h1>
-            <p class="text-[9px] uppercase tracking-[0.2em] opacity-40">Movement Mastery</p>
+    <nav class="w-96 border-r border-[#FFDBC2]/10 p-6 flex flex-col shrink-0 h-screen sticky top-0 bg-[#0d0d0d] z-20">
+    <div class="mb-6">
+        <h1 class="text-2xl font-black italic tracking-tighter mb-1">VIMOSAUR</h1>
+        <p class="text-[12px] uppercase tracking-[0.2em] opacity-40">Movement Mastery</p>
+    </div>
+
+    <div id="nav-level-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
         </div>
 
-        <div id="nav-level-list" class="flex flex-col gap-4">
-            </div>
-
-        <div class="mt-auto pt-6 border-t border-[#FFDBC2]/10">
-            <div class="text-[10px] uppercase tracking-widest opacity-40 mb-2">Controls</div>
-            <div class="text-[9px] space-y-1 opacity-60">
-                <p><span class="text-[#FFDBC2] font-bold">N</span> Next</p>
-                <p><span class="text-[#FFDBC2] font-bold">I</span> Infinite</p>
-                <p><span class="text-[#FFDBC2] font-bold">R</span> Restart</p>
-            </div>
+    <div class="mt-6 pt-6 border-t border-[#FFDBC2]/10">
+        <div class="text-[10px] uppercase tracking-widest opacity-40 mb-2">Controls</div>
+        <div class="text-[9px] space-y-2 opacity-60">
+            <p><span class="bg-[#FFDBC2] text-black px-1 font-bold mr-2">N</span> Next</p>
+            <p><span class="bg-[#FFDBC2] text-black px-1 font-bold mr-2">I</span> Infinite</p>
+            <p><span class="bg-[#FFDBC2] text-black px-1 font-bold mr-2">R</span> Restart</p>
         </div>
-    </nav>
+    </div>
+</nav>
     <main class="flex-1 flex flex-col items-center justify-center">
     <div class="w-full max-w-3xl relative">
         

@@ -34,40 +34,47 @@ const levelMetadata = {
     4: { title: "The Vertical", desc: "Paragraph jumps ({, }). Master vertical space." }
 };
 
-function updateNavbar() {
+// app.js
+
+async function updateNavbar() {
     const nav = document.getElementById('nav-level-list');
-    
-    nav.innerHTML = config.categories.map(cat => `
-        <div class="mb-6">
-            <h3 class="text-[9px] uppercase tracking-[0.3em] opacity-30 mb-3 ml-2">
-                ${cat.name}
-            </h3>
-            <div class="flex flex-col gap-1">
-                ${cat.levelIds.map(id => {
-                    const level = config.levels[id];
+    if (!nav) return;
 
-                    if (!level) {
-                        console.warn(`Level ${id} is listed in categories but missing from levels config.`);
-                        return ''; 
-                    }
-                    const isActive = gameState.level === id;
-                    return `
-                        <button onclick="window.jumpToLevel(${id})" 
-                            class="text-left p-3 border transition-all ${
-                                isActive 
-                                ? 'border-[#FFDBC2] bg-[#FFDBC2]/5' 
-                                : 'border-transparent hover:bg-white/5'
-                            }">
-                            <div class="text-[10px] font-bold ${isActive ? 'text-[#FFDBC2]' : 'opacity-50'}">
-                                ${id}. ${level.title}
-                            </div>
-                        </button>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-    `).join('');
+    let navHtml = '';
 
+    for (const cat of config.categories) {
+        navHtml += `
+            <div class="mb-4">
+                <h3 class="text-[12px] uppercase tracking-[0.2em] opacity-30 mb-2 ml-2">${cat.name}</h3>
+                <div class="flex flex-col gap-1">`;
+
+        for (const id of cat.levelIds) {
+            const level = config.levels[id];
+            
+            // Check if the level is actually implemented via our file check
+            const isImplemented = implementedLevels.has(id);
+            const isActive = gameState.level === id;
+
+            navHtml += `
+                <button 
+                    ${isImplemented ? `onclick="window.jumpToLevel(${id})"` : 'disabled'}
+                    class="group text-left px-3 py-2 border transition-all duration-300 ${
+                        !isImplemented 
+                        ? 'opacity-20 cursor-not-allowed bg-black/20 border-transparent' 
+                        : isActive 
+                            ? 'border-[#FFDBC2] bg-[#FFDBC2]/5' 
+                            : 'border-transparent hover:bg-white/5'
+                    }">
+                    <div class="text-[10px] ${isActive ? 'text-[#FFDBC2] font-bold' : 'opacity-40 group-hover:opacity-100'}">
+                        ${id}. ${level ? level.title : 'Coming Soon'}
+                    </div>
+                    ${!isImplemented ? '<div class="text-[7px] uppercase tracking-tighter opacity-40 mt-1">File Missing</div>' : ''}
+                </button>`;
+        }
+        navHtml += `</div></div>`;
+    }
+
+    nav.innerHTML = navHtml;
 }
 
 function getCharClass(line, char, x) {
@@ -341,6 +348,23 @@ window.jumpToLevel = (levelNum) => {
     render();
 };
 
-// INITIAL TRIGGER
-updateNavbar();
+// Store which levels actually have valid generator scripts
+let implementedLevels = new Set();
+
+async function validateLevels() {
+    for (const id in config.levels) {
+        try {
+            // Attempt to fetch the script head to see if it exists
+            const response = await fetch(`./targets/level${id}.js`, { method: 'HEAD' });
+            if (response.ok) {
+                implementedLevels.add(parseInt(id));
+            }
+        } catch (e) {
+            console.log(`Level ${id} generator not found.`);
+        }
+    }
+    updateNavbar(); // Refresh navbar once we know what's real
+}
+
+validateLevels();
 render();
